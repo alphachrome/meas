@@ -6,35 +6,38 @@ from matplotlib import pyplot as plt
 from myinstruments import GPD, BK8600, DM3058
 
 # Measurement Configuration
-VIN_0 = 7.2
-VIN_N = 17.1
-VIN_STEP = 0.5
-VOUT = 13
-IOUT = 1
+DUT="CISIL-LED"
 
-FILE="CISIL-DRV-NEW_EFF-vs-VIN_VOUT{}V_IOUT{}A.csv".format(VOUT, IOUT)
+VOUT_0 = 10
+VOUT_N = 16
+VOUT_STEP = 0.25
+VIN = 17
+IIN = 3.2
+
+FILE="CISIL-DRV-NEW_EFF-vs-VOUT_VIN{}V_IOUT1A.csv".format(VIN)
 # Start measurement...
 # 
-RANGE = np.linspace(VIN_0, VIN_N, num=(VIN_N-VIN_0+VIN_STEP)/VIN_STEP)
+RANGE = np.linspace(VOUT_0, VOUT_N, num=(VOUT_N-VOUT_0+VOUT_STEP)/VOUT_STEP)
 RANGE = [round(f,3) for f in RANGE]
-#RANGE = np.array(range(VIN_0, VIN_N+VIN_STEP, VIN_STEP))
+
 print RANGE
 
 power = GPD()
 meter = DM3058()
 load = BK8600()
 
-power.set_volt(1,VIN_0)
-power.set_curr(1,3.1)
+power.set_volt(1,VIN)
+power.set_curr(1,IIN)
 power.set_output(1)
+
 time.sleep(1)
 load.set_func('VOLT')
 load.set_remsens('ON')
-load.set_cv(VOUT)
+load.set_cv(VOUT_0)
 load.set_input('ON')
 
-plt.axis([VIN_0, VIN_N, 80, 90])
-plt.xlabel('VIN (V)')
+plt.axis([VOUT_0, VOUT_N, 70, 90])
+plt.xlabel('VOUT (V)')
 plt.ylabel('EFFICIENCY (%)')
 plt.grid()
 plt.ion()
@@ -47,13 +50,13 @@ loss_l=[]
 
 with open(FILE, "w") as f:
     f.write("Vin_V,Vout_V,Iin_A,Iout_A,Pin_W,Pout_W,Eff_%,Loss_W\n")
-    for vin in RANGE:
+    for vout in RANGE:
 
         #load.set_input(0)
-        power.set_volt(1,vin)
+        load.set_cv(vout)
         #time.sleep(1)
         #load.set_input(1)
-        time.sleep(3)
+        time.sleep(5)
         
         vout_meas = float(load.get_volt())
         iout_meas = float(load.get_curr())
@@ -84,14 +87,14 @@ with open(FILE, "w") as f:
         print "      --Pin:{:.3f}W--Pout:{:.3f}--Loss:{:.2f}--Eff:{:.2f}%".format(
             pin, pout, loss, eff)
         
-        plt.scatter(vin, eff, marker='s', alpha=0.5)
+        plt.scatter(vout, eff, marker='s', alpha=0.5)
         plt.pause(0.05)
 
         f.write("{},{},{},{},{},{},{},{}\n".format(vin_meas,vout_meas,iin_meas,iout_meas,pin,pout,eff,loss))
 
-        if iin_meas>3.1:
+        if iin_meas>=3.1:
             RANGE = np.array(RANGE)
-            RANGE = RANGE[RANGE <= vin]
+            RANGE = RANGE[RANGE <= vout]
             print "Input overcurrent!"
             break
 
@@ -110,7 +113,7 @@ ax[0].plot(RANGE, eff_l, 'b-x')
 #ax[0].set_xlabel('Iout (A)')
 ax[0].set_ylabel('EFFICIENCY (%)', color='b')
 
-ax[0].axis([VIN_0, VIN_N, 70, 90])
+ax[0].axis([VOUT_0, VOUT_N, 70, 90])
 
 major_ticks = np.arange(70, 91, 5)
 minor_ticks = np.arange(70, 91, 1)
@@ -121,10 +124,10 @@ ax[0].grid(which='minor', alpha=0.7)
 ax[0].grid(which='major')
 
 ax[1].plot(RANGE, loss_l, 'r:x')
-ax[1].set_xlabel('VIN (V)')
+ax[1].set_xlabel('VOUT (V)')
 ax[1].set_ylabel('LOSS (W)', color='r')
 
-ax[1].axis([VIN_0, VIN_N, 0, 5])
+ax[1].axis([VOUT_0, VOUT_N, 0, 5])
 
 major_ticks = np.arange(0, 5.1, 0.5)
 minor_ticks = np.arange(0, 5, 0.1)

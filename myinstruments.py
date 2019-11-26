@@ -72,6 +72,12 @@ class GPD:
     def get_curr(self, ch):
         return float(self.ask("IOUT{}?".format(ch)).rstrip()[:-1])
 
+    def on(self):
+        self.write("OUT1")
+
+    def off(self):
+        self.write("OUT0")
+        
     def set_output(self, onoff):
         self.write("OUT{}".format(onoff))        
 
